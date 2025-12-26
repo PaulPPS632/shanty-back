@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: ripley_back_api
+    ports:
+      - "3400:3000"
+    env_file:
+      - .env
+    environment:
+      # Overrides DB_HOST to allow connection to the host machine's Postgres
+      # if the DB is running locally on Windows outside of Docker.
+      # If your DB is remote (AWS, etc), this line can be removed or ignored.
+      - DB_HOST=postgresql
+    restart: always
