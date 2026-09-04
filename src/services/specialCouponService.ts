@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { PDFDocument, rgb, PDFImage } from 'pdf-lib';
 import bwipjs from 'bwip-js';
 import axios from 'axios';
-import { pool } from '../db';
+import { pool } from '../config/db';
 
 interface CouponDB {
     urlimagen: string;
