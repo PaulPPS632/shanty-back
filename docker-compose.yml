@@ -26,7 +26,7 @@ services:
       # Montarlo en .../data hace que la imagen aborte al arrancar.
       - pgdata:/var/lib/postgresql
       # El dump, solo lectura. Ajusta la ruta de la izquierda a donde lo tengas.
-      - ./dumps:/dumps:ro
+      - /DATA/.media/sdc1/peruanitos:/dumps:ro
     # Sin puertos publicados: la API entra por la red interna de compose.
     # Solo descomenta si necesitas conectarte desde fuera del VPS, y en ese
     # caso publica en 127.0.0.1 y entra por un tunel SSH.
