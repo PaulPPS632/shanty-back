@@ -20,7 +20,11 @@ services:
       # Explicito, para no depender del default de la imagen.
       POSTGRES_INITDB_ARGS: "--locale=en_US.utf8 --encoding=UTF8"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # OJO: en Postgres 18+ el volumen va en /var/lib/postgresql, NO en
+      # .../data. La imagen guarda los datos en un subdirectorio por version
+      # (/var/lib/postgresql/18/docker) para permitir pg_upgrade --link.
+      # Montarlo en .../data hace que la imagen aborte al arrancar.
+      - pgdata:/var/lib/postgresql
       # El dump, solo lectura. Ajusta la ruta de la izquierda a donde lo tengas.
       - ./dumps:/dumps:ro
     # Sin puertos publicados: la API entra por la red interna de compose.
