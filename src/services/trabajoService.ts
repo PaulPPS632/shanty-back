@@ -5,7 +5,11 @@ import path from 'path';
 export interface EmpleoDB {
     RUC_TRABAJO: string;
     FechaInicio: string;
-    FechaFin: string;
+    FechaFin: string;          // fecha 'DD/MM/YYYY' o el literal 'VIGENTE'
+    RazonSocial: string | null;
+    ActividadEconomica: string | null;
+    Ocupacion: string | null;
+    MotivoBaja: string | null;
 }
 
 const HOST = 'apps.trabajo.gob.pe';
@@ -100,6 +104,10 @@ export class TrabajoService {
             RUC_TRABAJO: k.v_numruc,
             FechaInicio: k.d_fecini,
             FechaFin: k.d_fecfin,
+            RazonSocial: k.v_razsoc ?? null,
+            ActividadEconomica: k.v_actecono ?? null,
+            Ocupacion: k.v_ocupacion ?? null,
+            MotivoBaja: k.v_motivobaja ?? null,
         }));
     }
 }

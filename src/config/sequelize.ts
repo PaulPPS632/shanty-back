@@ -1,10 +1,13 @@
-import { Sequelize } from 'sequelize';
+import 'reflect-metadata';
+import { Sequelize } from 'sequelize-typescript';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 // Instancia Sequelize sobre la base PostgreSQL. Unica conexion del backend.
 // Reutiliza las mismas variables de entorno DB_*.
+// Los modelos NO se pasan aca: se registran en models/index.ts con
+// sequelize.addModels(...) para evitar un import circular config <-> models.
 export const sequelize = new Sequelize(
     process.env.DB_DATABASE as string,
     process.env.DB_USER as string,

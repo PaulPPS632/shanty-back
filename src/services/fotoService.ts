@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { PadronRaw } from '../models';
+import { Persona } from '../models';
 
 interface ReniecResponse {
     apPrimer: string;
@@ -32,7 +32,7 @@ export class FotoService {
     }
 
     private async savePhoto(dni: string, foto: string): Promise<void> {
-        await PadronRaw.update({ foto }, { where: { dni } });
+        await Persona.update({ foto }, { where: { dni } });
     }
 
     // Always fetches fresh from the external API and overwrites the stored photo.
@@ -47,10 +47,10 @@ export class FotoService {
         return externalData.foto;
     }
 
-    // Returns the cached photo from padron_raw when present; otherwise fetches and caches it.
-    // Returns undefined when the DNI isn't in padron at all (caller should 404).
+    // Returns the cached photo from personas when present; otherwise fetches and caches it.
+    // Returns undefined when the DNI isn't in personas at all (caller should 404).
     async getCachedOrFetchPhoto(dni: string): Promise<string | null | undefined> {
-        const row = await PadronRaw.findByPk(dni, { attributes: ['foto'], raw: true });
+        const row = await Persona.findByPk(dni, { attributes: ['foto'], raw: true });
 
         if (!row) {
             return undefined;

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { PadronRaw } from '../models';
+import { Persona } from '../models';
 
 const BASE_URL = 'https://api-docs-admision.utpxpedition.com/api';
 
@@ -23,7 +23,7 @@ export class utpService {
     // Obtiene la fecha de nacimiento del padrón local (formato YYYY-MM-DD).
     async fecha_nacimiento(dni: string): Promise<string> {
         try {
-            const row = await PadronRaw.findByPk(dni, { attributes: ['fecha_nac'], raw: true });
+            const row = await Persona.findByPk(dni, { attributes: ['fecha_nac'], raw: true });
             if (!row || !row.fecha_nac) {
                 throw new Error(`No se encontró fecha de nacimiento para el DNI: ${dni}`);
             }

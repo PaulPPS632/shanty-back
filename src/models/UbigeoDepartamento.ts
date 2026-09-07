@@ -1,18 +1,19 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes } from 'sequelize';
-import { sequelize } from '../config/sequelize';
+import { InferAttributes, InferCreationAttributes, NonAttribute } from 'sequelize';
+import { Table, Model, Column, DataType, PrimaryKey, HasMany } from 'sequelize-typescript';
+import { UbigeoProvincia } from './UbigeoProvincia';
 
+@Table({ tableName: 'ubigeo_departamento', timestamps: false, freezeTableName: true })
 export class UbigeoDepartamento extends Model<
     InferAttributes<UbigeoDepartamento>,
     InferCreationAttributes<UbigeoDepartamento>
 > {
-    declare id: string;        // char(2)  ej '15'
-    declare nombre: string;
-}
+    @PrimaryKey
+    @Column({ type: DataType.CHAR(2), allowNull: false })
+    id!: string;        // char(2)  ej '15'
 
-UbigeoDepartamento.init(
-    {
-        id: { type: DataTypes.CHAR(2), primaryKey: true },
-        nombre: { type: DataTypes.TEXT, allowNull: false },
-    },
-    { sequelize, tableName: 'ubigeo_departamento' }
-);
+    @Column({ type: DataType.TEXT, allowNull: false })
+    nombre!: string;
+
+    @HasMany(() => UbigeoProvincia, { as: 'provincias', foreignKey: 'departamento_id', sourceKey: 'id' })
+    provincias?: NonAttribute<UbigeoProvincia[]>;
+}

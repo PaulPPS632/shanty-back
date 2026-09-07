@@ -1,16 +1,91 @@
-version: '3.8'
+# Stack para VPS: Postgres + API.
+#
+# El dump viene de PostgreSQL 18.6, asi que la imagen tiene que ser 18: un
+# pg_restore de formato custom NO se puede cargar en un servidor mas viejo.
+#
+# La imagen oficial trae LANG=en_US.utf8, la misma collation con la que se creo
+# la base original. Importa: los indices de `personas` (paterno_norm, ...) se
+# reconstruyen con la collation del servidor destino, y el orden alfabetico del
+# buscador cambia si no coincide.
 
 services:
+  db:
+    image: postgres:18
+    container_name: shanty_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-paulp}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?falta DB_PASSWORD en .env}
+      POSTGRES_DB: ${DB_DATABASE:-personas}
+      # Explicito, para no depender del default de la imagen.
+      POSTGRES_INITDB_ARGS: "--locale=en_US.utf8 --encoding=UTF8"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # El dump, solo lectura. Ajusta la ruta de la izquierda a donde lo tengas.
+      - ./dumps:/dumps:ro
+    # Sin puertos publicados: la API entra por la red interna de compose.
+    # Solo descomenta si necesitas conectarte desde fuera del VPS, y en ese
+    # caso publica en 127.0.0.1 y entra por un tunel SSH.
+    # ports:
+    #   - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-paulp} -d ${DB_DATABASE:-personas}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # Tuning para host de 64 GB de RAM sobre 37M filas.
+    # Los datos completos son ~20 GB, o sea que entran enteros en RAM: con
+    # effective_cache_size alto el planner lo sabe y prefiere indices antes que
+    # seq scans. maintenance_work_mem es el que mas acelera crear indices.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=16GB            # 25% de la RAM
+      - -c
+      - effective_cache_size=48GB      # 75%: lo que el SO puede tener cacheado
+      - -c
+      - maintenance_work_mem=4GB       # CREATE INDEX del restore
+      - -c
+      - work_mem=128MB                 # POR nodo de sort/hash y por conexion: no pasarse
+      - -c
+      - max_wal_size=16GB              # menos checkpoints durante el restore
+      - -c
+      - checkpoint_timeout=30min
+      - -c
+      - checkpoint_completion_target=0.9
+      # NVMe/SSD. Si el NAS es de discos mecanicos, subir a random_page_cost=4
+      # y bajar effective_io_concurrency a 2.
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - max_worker_processes=16
+      - -c
+      - max_parallel_workers=12
+      - -c
+      - max_parallel_workers_per_gather=4
+
   api:
     build: .
-    container_name: ripley_back_api
-    ports:
-      - "3400:3000"
+    container_name: shanty_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     env_file:
       - .env
     environment:
-      # Overrides DB_HOST to allow connection to the host machine's Postgres
-      # if the DB is running locally on Windows outside of Docker.
-      # If your DB is remote (AWS, etc), this line can be removed or ignored.
-      - DB_HOST=postgresql
-    restart: always
+      # Dentro de compose el host de la base es el nombre del servicio, no localhost.
+      DB_HOST: db
+      DB_PORT: 5432
+      # El Dockerfile expone 3000; se fija aca para que no lo pise el PORT=3001
+      # del .env local y deje de calzar con el mapeo de puertos.
+      PORT: 3000
+    ports:
+      # Solo en loopback: delante va un nginx/caddy con TLS.
+      - "127.0.0.1:3400:3000"
+
+volumes:
+  pgdata:

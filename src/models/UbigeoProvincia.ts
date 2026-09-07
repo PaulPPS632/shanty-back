@@ -1,20 +1,27 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes } from 'sequelize';
-import { sequelize } from '../config/sequelize';
+import { InferAttributes, InferCreationAttributes, NonAttribute } from 'sequelize';
+import { Table, Model, Column, DataType, PrimaryKey, ForeignKey, BelongsTo, HasMany } from 'sequelize-typescript';
+import { UbigeoDepartamento } from './UbigeoDepartamento';
+import { UbigeoDistrito } from './UbigeoDistrito';
 
+@Table({ tableName: 'ubigeo_provincia', timestamps: false, freezeTableName: true })
 export class UbigeoProvincia extends Model<
     InferAttributes<UbigeoProvincia>,
     InferCreationAttributes<UbigeoProvincia>
 > {
-    declare id: string;              // char(4)  ej '1501'
-    declare nombre: string;
-    declare departamento_id: string; // char(2) FK
-}
+    @PrimaryKey
+    @Column({ type: DataType.CHAR(4), allowNull: false })
+    id!: string;              // char(4)  ej '1501'
 
-UbigeoProvincia.init(
-    {
-        id: { type: DataTypes.CHAR(4), primaryKey: true },
-        nombre: { type: DataTypes.TEXT, allowNull: false },
-        departamento_id: { type: DataTypes.CHAR(2), allowNull: false },
-    },
-    { sequelize, tableName: 'ubigeo_provincia' }
-);
+    @Column({ type: DataType.TEXT, allowNull: false })
+    nombre!: string;
+
+    @ForeignKey(() => UbigeoDepartamento)
+    @Column({ type: DataType.CHAR(2), allowNull: false })
+    departamento_id!: string; // char(2) FK
+
+    @BelongsTo(() => UbigeoDepartamento, { as: 'departamento', foreignKey: 'departamento_id', targetKey: 'id' })
+    departamento?: NonAttribute<UbigeoDepartamento>;
+
+    @HasMany(() => UbigeoDistrito, { as: 'distritos', foreignKey: 'provincia_id', sourceKey: 'id' })
+    distritos?: NonAttribute<UbigeoDistrito[]>;
+}
