@@ -1,8 +1,8 @@
-import { Pool } from 'pg';
 import { PDFDocument, rgb, PDFImage } from 'pdf-lib';
 import bwipjs from 'bwip-js';
 import axios from 'axios';
-import { pool } from '../config/db';
+import { QueryTypes } from 'sequelize';
+import { sequelize } from '../config/sequelize';
 
 interface CouponDB {
     urlimagen: string;
@@ -14,13 +14,12 @@ export class SpecialCouponService {
     
     async generateCouponsPdfForValue50(): Promise<Buffer> {
         // 1. Fetch data from DB
-        const query = `
-            SELECT cp.urlimagen, cp.cup_num_cupon, cp.valor 
-            FROM cupones_campaña cp 
-            WHERE cp.valor = 50
-        `;
-        const result = await pool.query(query);
-        const coupons: CouponDB[] = result.rows;
+        const coupons = await sequelize.query<CouponDB>(
+            `SELECT cp.urlimagen, cp.cup_num_cupon, cp.valor
+             FROM cupones_campaña cp
+             WHERE cp.valor = 50`,
+            { type: QueryTypes.SELECT }
+        );
 
         if (coupons.length === 0) {
             throw new Error('No coupons found with value 50');

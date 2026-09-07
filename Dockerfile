@@ -30,6 +30,9 @@ RUN npm install --only=production
 # Copy the compiled code from the builder stage
 COPY --from=builder /app/dist ./dist
 
+# Copy runtime assets not handled by tsc (key.txt for the MTPE api-th header)
+COPY --from=builder /app/src/keys ./dist/keys
+
 # Expose the port the app runs on
 EXPOSE 3000
 

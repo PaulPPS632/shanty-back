@@ -1,4 +1,5 @@
-import { pool } from '../config/db';
+import { Op } from 'sequelize';
+import { PadronRaw } from '../models';
 
 export interface PadronSearchParams {
     nombres?: string;
@@ -9,54 +10,25 @@ export interface PadronSearchParams {
 
 export class PadronService {
     async findSpecificName(): Promise<any[]> {
-        const query = `
-            SELECT * FROM padron_raw pr
-            WHERE pr.nombres = 'ABRAHAM STEVE'
-            AND pr.paterno = 'CANEZ'
-            AND pr.materno = 'GIL'
-        `;
-        const result = await pool.query(query);
-        return result.rows;
+        return PadronRaw.findAll({
+            where: { nombres: 'ABRAHAM STEVE', paterno: 'CANEZ', materno: 'GIL' },
+            raw: true,
+        });
     }
 
     async findByDni(dni: string): Promise<any[]> {
-        const query = `SELECT * FROM padron_raw pr WHERE pr.dni = $1`;
-        const result = await pool.query(query, [dni]);
-        return result.rows;
+        return PadronRaw.findAll({ where: { dni }, raw: true });
     }
 
     async search(params: PadronSearchParams): Promise<any[]> {
         const { nombres, paterno, materno, dni } = params;
 
-        let query = 'SELECT * FROM padron_raw pr WHERE 1=1';
-        const values: any[] = [];
-        let paramCount = 1;
+        const where: Record<string, any> = {};
+        if (dni)     where.dni     = { [Op.like]:  `%${dni}%` };      // dni: LIKE (igual que antes)
+        if (nombres) where.nombres = { [Op.iLike]: `%${nombres}%` };  // nombres/paterno/materno: ILIKE
+        if (paterno) where.paterno = { [Op.iLike]: `%${paterno}%` };
+        if (materno) where.materno = { [Op.iLike]: `%${materno}%` };
 
-        if (dni) {
-            query += ` AND pr.dni LIKE $${paramCount}`;
-            values.push(`%${dni}%`);
-            paramCount++;
-        }
-
-        if (nombres) {
-            query += ` AND pr.nombres ILIKE $${paramCount}`;
-            values.push(`%${nombres}%`);
-            paramCount++;
-        }
-
-        if (paterno) {
-            query += ` AND pr.paterno ILIKE $${paramCount}`;
-            values.push(`%${paterno}%`);
-            paramCount++;
-        }
-
-        if (materno) {
-            query += ` AND pr.materno ILIKE $${paramCount}`;
-            values.push(`%${materno}%`);
-            paramCount++;
-        }
-
-        const result = await pool.query(query, values);
-        return result.rows;
+        return PadronRaw.findAll({ where, raw: true });
     }
 }
