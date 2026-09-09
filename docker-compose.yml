@@ -32,6 +32,14 @@ services:
     # caso publica en 127.0.0.1 y entra por un tunel SSH.
     # ports:
     #   - "127.0.0.1:5432:5432"
+    # json-file sin tope crece sin limite, y ahora se loguea una linea por request.
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"        # 100 MB de techo por servicio
+        compress: "true"
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-paulp} -d ${DB_DATABASE:-personas}"]
       interval: 10s
@@ -73,6 +81,9 @@ services:
 
   api:
     build: .
+    # Nombre fijo para poder construir en otra maquina y traer la imagen con
+    # `docker save`/`docker load`, sin depender de que el host pueda compilar.
+    image: shanty-back-api:latest
     container_name: shanty_api
     restart: unless-stopped
     depends_on:
@@ -90,6 +101,14 @@ services:
     ports:
       # Solo en loopback: delante va un nginx/caddy con TLS.
       - "127.0.0.1:3400:3000"
+
+    # json-file sin tope crece sin limite, y ahora se loguea una linea por request.
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"        # 100 MB de techo por servicio
+        compress: "true"
 
 volumes:
   pgdata:

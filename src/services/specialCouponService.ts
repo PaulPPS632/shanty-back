@@ -3,6 +3,9 @@ import bwipjs from 'bwip-js';
 import axios from 'axios';
 import { QueryTypes } from 'sequelize';
 import { sequelize } from '../config/sequelize';
+import { logger } from '../config/logger';
+
+const logSvc = logger.child({ comp: 'svc' });
 
 interface CouponDB {
     urlimagen: string;
@@ -89,7 +92,7 @@ export class SpecialCouponService {
                     });
                     currentY -= (imgDims.height + 10);
                 } catch (e) {
-                    console.error(`Error fetching/embedding image for coupon ${coupon.cup_num_cupon}`, e);
+                    logSvc.warn({ err: e, cupon: coupon.cup_num_cupon }, 'No se pudo incrustar la imagen del cupon');
                     // Continue without image
                 }
             }
@@ -116,7 +119,7 @@ export class SpecialCouponService {
                 });
                 currentY -= (bcDims.height + 5);
             } catch (e) {
-                console.error('Error generating barcode', e);
+                logSvc.warn({ err: e }, 'No se pudo generar el codigo de barras');
                 currentY -= 20; 
             }
 

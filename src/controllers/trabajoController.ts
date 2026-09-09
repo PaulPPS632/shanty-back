@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { TrabajoService } from '../services/trabajoService';
+import { logFallo } from '../middlewares/logMeta';
 
 const trabajoService = new TrabajoService();
 
@@ -22,7 +23,7 @@ export class TrabajoController {
 
             res.json(empleos);
         } catch (error: any) {
-            console.error(error);
+            logFallo(req, res, error);
             res.status(500).json({ error: error.message });
         }
     }

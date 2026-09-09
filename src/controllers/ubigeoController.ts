@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { UbigeoService } from '../services/ubigeoService';
+import { logFallo } from '../middlewares/logMeta';
 
 const ubigeoService = new UbigeoService();
 
@@ -8,7 +9,7 @@ export class UbigeoController {
         try {
             res.json(await ubigeoService.departamentos());
         } catch (error: any) {
-            console.error(error);
+            logFallo(req, res, error);
             res.status(500).json({ error: error.message });
         }
     }
@@ -17,7 +18,7 @@ export class UbigeoController {
         try {
             res.json(await ubigeoService.provincias(req.query.departamento_id as string));
         } catch (error: any) {
-            console.error(error);
+            logFallo(req, res, error);
             res.status(500).json({ error: error.message });
         }
     }
@@ -31,7 +32,7 @@ export class UbigeoController {
                 ),
             );
         } catch (error: any) {
-            console.error(error);
+            logFallo(req, res, error);
             res.status(500).json({ error: error.message });
         }
     }

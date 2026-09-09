@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { FiltrosPadron, OrdenPadron, PadronService } from '../services/padronService';
+import { anotar, logFallo } from '../middlewares/logMeta';
 
 const padronService = new PadronService();
 
@@ -25,7 +26,7 @@ export class PadronController {
 
             res.json(rows);
         } catch (error: any) {
-            console.error(error);
+            logFallo(req, res, error);
             res.status(500).json({ error: error.message });
         }
     }
@@ -37,7 +38,7 @@ export class PadronController {
 
             res.json(rows);
         } catch (error: any) {
-            console.error(error);
+            logFallo(req, res, error);
             res.status(500).json({ error: error.message });
         }
     }
@@ -52,6 +53,7 @@ export class PadronController {
             const edadMax = aEntero(body.edadMax);
 
             if (edadMin !== undefined && edadMax !== undefined && edadMin > edadMax) {
+                anotar(res, { accion: 'padron.search', motivo: 'rango_edad_invalido' });
                 res.status(400).json({ error: 'edadMin no puede ser mayor que edadMax' });
                 return;
             }
@@ -59,6 +61,7 @@ export class PadronController {
             const ordenPedido = aTexto(body.orden) as OrdenPadron | undefined;
 
             if (ordenPedido && !ORDENES_VALIDOS.includes(ordenPedido)) {
+                anotar(res, { accion: 'padron.search', motivo: 'orden_invalido' });
                 res.status(400).json({ error: `orden invalido. Use: ${ORDENES_VALIDOS.join(', ')}` });
                 return;
             }
@@ -78,9 +81,36 @@ export class PadronController {
                 offset: aEntero(body.offset),
             };
 
-            res.json(await padronService.buscar(filtros));
+            const resultado = await padronService.buscar(filtros);
+
+            anotar(res, {
+                accion: 'padron.search',
+                // Se anota `filtros`, no `body`: es lo que el servicio realmente uso
+                // (ya pasado por aTexto/aEntero). Los undefined los descarta el
+                // aplanado del logger, asi que solo salen los campos que se llenaron.
+                q: {
+                    dni: filtros.dni,
+                    nombres: filtros.nombres,
+                    paterno: filtros.paterno,
+                    materno: filtros.materno,
+                    dep: filtros.departamento_id,
+                    prov: filtros.provincia_id,
+                    dist: filtros.distrito_id,
+                    edad: filtros.edadMin !== undefined || filtros.edadMax !== undefined
+                        ? `${filtros.edadMin ?? ''}-${filtros.edadMax ?? ''}`
+                        : undefined,
+                    orden: filtros.orden,
+                    pag: `${resultado.offset}+${resultado.limite}`,
+                },
+                resultados: resultado.resultados.length,
+                total: resultado.total,
+                // TOPE_CONTEO = 10 000: el '+' en el log significa "hay mas".
+                totalAcotado: resultado.totalAcotado,
+            });
+
+            res.json(resultado);
         } catch (error: any) {
-            console.error(error);
+            logFallo(req, res, error);
             res.status(500).json({ error: error.message });
         }
     }

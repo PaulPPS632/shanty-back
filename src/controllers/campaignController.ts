@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { CampaignService } from '../services/campaignService';
+import { logFallo } from '../middlewares/logMeta';
 
 const campaignService = new CampaignService();
 
@@ -16,7 +17,7 @@ export class CampaignController {
                 res.status(404).send('No campaigns found');
             }
         } catch (error: any) {
-            console.error(error);
+            logFallo(req, res, error);
             res.status(500).json({ error: error.message });
         }
     }

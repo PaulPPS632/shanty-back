@@ -9,6 +9,7 @@ import empresaRoutes from './empresaRoutes';
 import couponRoutes from './couponRoutes';
 import utpRoutes from './utpRoutes';
 import trabajoRoutes from './trabajoRoutes';
+import creditosRoutes from './creditosRoutes';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use(empresaRoutes);
 router.use(couponRoutes);
 router.use(utpRoutes);
 router.use(trabajoRoutes);
+router.use(creditosRoutes);
 
 export default router;

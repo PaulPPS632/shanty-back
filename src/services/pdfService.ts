@@ -2,6 +2,9 @@ import { PDFDocument, rgb, PDFImage } from 'pdf-lib';
 import bwipjs from 'bwip-js';
 import axios from 'axios';
 import { Root } from '../types';
+import { logger } from '../config/logger';
+
+const logSvc = logger.child({ comp: 'svc' });
 
 export class PdfService {
     async generateCouponsPdf(data: Root): Promise<Buffer> {
@@ -33,7 +36,7 @@ export class PdfService {
                             pdfImage = await doc.embedJpg(imgResp.data);
                     }
                 } catch (e) {
-                    console.error('Error fetching/embedding image for promovar', p.id);
+                    logSvc.warn({ err: e, promovar: p.id }, 'No se pudo incrustar la imagen del promovar');
                 }
 
                 for (const coupon of p.cupones) {
@@ -89,7 +92,7 @@ export class PdfService {
                          });
                          currentY -= (bcDims.height + 5);
                      } catch (e) {
-                          console.error('Error generating barcode', e);
+                          logSvc.warn({ err: e }, 'No se pudo generar el codigo de barras');
                           currentY -= 20; 
                      }
 

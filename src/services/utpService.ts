@@ -1,5 +1,8 @@
 import axios from 'axios';
 import { Persona } from '../models';
+import { logger } from '../config/logger';
+
+const logSvc = logger.child({ comp: 'svc' });
 
 const BASE_URL = 'https://api-docs-admision.utpxpedition.com/api';
 
@@ -83,12 +86,12 @@ export class utpService {
                 );
                 documentos = docs.data;
             } catch (docErr: any) {
-                console.error(`No se pudieron obtener documentos: ${docErr.message}`);
+                logSvc.warn({ err: docErr }, `No se pudieron obtener documentos: ${docErr.message}`);
             }
 
             return { alumno, documentos };
         } catch (error: any) {
-            console.error(`Error en dataalumno: ${error.message}`);
+            logSvc.error({ err: error }, `Error en dataalumno: ${error.message}`);
             throw new Error(`Error en dataalumno: ${error.message}`);
         }
     }

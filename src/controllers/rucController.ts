@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { MotivoFallo, RucService } from '../services/rucService';
+import { anotar, logFallo } from '../middlewares/logMeta';
 
 const rucService = new RucService();
 
@@ -19,16 +20,30 @@ export class RucController {
             const refrescar = req.query.refrescar === '1' || req.query.refrescar === 'true';
             const resultado = await rucService.consultarRuc(req.params.ruc, refrescar);
 
+            const q = { ruc: req.params.ruc, refrescar: refrescar || undefined };
+
             if (!resultado.ok) {
+                // MotivoFallo: invalido | conexion | sin_resultados | saturado.
+                // 'saturado' es la cola interna llena; verlo en el log es la senal
+                // de que SUNAT esta throttleando.
+                anotar(res, { accion: 'ruc.consulta', q, motivo: resultado.motivo, resultados: 0 });
                 res.status(STATUS_POR_MOTIVO[resultado.motivo]).json({ error: resultado.error });
                 return;
             }
+
+            anotar(res, {
+                accion: 'ruc.consulta',
+                q,
+                // Mismo valor que la cabecera X-Origen. 'db' = no se toco la red.
+                origen: resultado.origen,
+                resultados: 1,
+            });
 
             // Cabecera informativa: 'db' = salio de la tabla empresas (sin red).
             res.set('X-Origen', resultado.origen);
             res.json(resultado.ficha);
         } catch (error: any) {
-            console.error(error);
+            logFallo(req, res, error);
             res.status(500).json({ error: error.message });
         }
     }

@@ -14,6 +14,9 @@
  */
 
 import { Empresa } from '../models';
+import { logger } from '../config/logger';
+
+const logSvc = logger.child({ comp: 'svc' });
 
 const URL_POST = 'https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/jcrS00Alias';
 
@@ -495,7 +498,7 @@ async function guardar(ficha: FichaRuc): Promise<Date | null> {
         return ahora;
     } catch (e) {
         // Guardar es un efecto secundario: si falla, igual se devuelve la ficha.
-        console.error('No se pudo guardar la empresa', ficha.ruc, e);
+        logSvc.warn({ err: e, ruc: ficha.ruc }, 'No se pudo guardar la empresa');
 
         return null;
     }

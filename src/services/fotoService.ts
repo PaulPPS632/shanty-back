@@ -12,6 +12,16 @@ interface ReniecResponse {
     ubigeo: string;
 }
 
+/**
+ * Union discriminada, misma forma que ResultadoConsulta de rucService: el
+ * llamante necesita saber si la foto salio de `personas.foto` (gratis) o de una
+ * llamada a RENIEC (de pago). Antes se devolvia solo la cadena y el cobro no
+ * podia distinguirlos, asi que toda foto pagaba precio completo.
+ */
+export type ResultadoFoto =
+    | { ok: true; foto: string; origen: 'db' | 'reniec' }
+    | { ok: false; motivo: 'sin_persona' | 'sin_foto' };
+
 export class FotoService {
     private async fetchFromReniec(dni: string): Promise<Partial<ReniecResponse>> {
         const params = new URLSearchParams();
@@ -48,18 +58,20 @@ export class FotoService {
     }
 
     // Returns the cached photo from personas when present; otherwise fetches and caches it.
-    // Returns undefined when the DNI isn't in personas at all (caller should 404).
-    async getCachedOrFetchPhoto(dni: string): Promise<string | null | undefined> {
+    // `origen` dice cual de las dos cosas paso: es lo que decide el cobro.
+    async getCachedOrFetchPhoto(dni: string): Promise<ResultadoFoto> {
         const row = await Persona.findByPk(dni, { attributes: ['foto'], raw: true });
 
         if (!row) {
-            return undefined;
+            return { ok: false, motivo: 'sin_persona' };
         }
 
         if (row.foto && row.foto.trim() !== '') {
-            return row.foto;
+            return { ok: true, foto: row.foto, origen: 'db' };
         }
 
-        return this.fetchAndStorePhoto(dni);
+        const foto = await this.fetchAndStorePhoto(dni);
+
+        return foto ? { ok: true, foto, origen: 'reniec' } : { ok: false, motivo: 'sin_foto' };
     }
 }
